@@ -2543,17 +2543,40 @@ namespace flutter_inappwebview_plugin
       return;
     }
 
-    auto offset = static_cast<short>(delta * settings->scrollMultiplier);
+    // Modificar el multiplicador de scroll para hacer el movimiento más suave
+    // y receptivo a movimientos rápidos
+    auto scrollMultiplier = settings->scrollMultiplier;
+    
+    // Ajustar la sensibilidad basado en la magnitud del delta
+    // Esto hace que movimientos rápidos sean más receptivos
+    if (std::abs(delta) > 10.0) {
+        scrollMultiplier *= 1.5;
+    } else if (std::abs(delta) > 20.0) {
+        scrollMultiplier *= 2.0;
+    }
+
+    // Aplicar una curva de aceleración suave
+    double adjustedDelta = delta * scrollMultiplier;
+    if (std::abs(adjustedDelta) < 1.0) {
+        adjustedDelta = delta > 0 ? 1.0 : -1.0;
+    }
+
+    auto offset = static_cast<short>(adjustedDelta);
 
     if (horizontal) {
-      webViewCompositionController->SendMouseInput(
-        COREWEBVIEW2_MOUSE_EVENT_KIND_HORIZONTAL_WHEEL, virtualKeys_.state(),
-        offset, lastCursorPos_);
-    }
-    else {
-      webViewCompositionController->SendMouseInput(COREWEBVIEW2_MOUSE_EVENT_KIND_WHEEL,
-        virtualKeys_.state(), offset,
-        lastCursorPos_);
+        webViewCompositionController->SendMouseInput(
+            COREWEBVIEW2_MOUSE_EVENT_KIND_HORIZONTAL_WHEEL, 
+            virtualKeys_.state(),
+            offset, 
+            lastCursorPos_
+        );
+    } else {
+        webViewCompositionController->SendMouseInput(
+            COREWEBVIEW2_MOUSE_EVENT_KIND_WHEEL,
+            virtualKeys_.state(), 
+            offset,
+            lastCursorPos_
+        );
     }
   }
 
